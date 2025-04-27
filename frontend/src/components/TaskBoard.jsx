@@ -16,10 +16,13 @@ const TaskBoard = ({ showTaskForm, onCloseForm }) => {
     }
   }, [status, dispatch]);
 
+  // Defensive check to ensure tasks is an array
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+
   // Filter tasks by status
-  const todoTasks = tasks.filter(task => task.status === 'To Do');
-  const inProgressTasks = tasks.filter(task => task.status === 'In Progress');
-  const doneTasks = tasks.filter(task => task.status === 'Done');
+  const todoTasks = safeTasks.filter(task => task.status === 'To Do');
+  const inProgressTasks = safeTasks.filter(task => task.status === 'In Progress');
+  const doneTasks = safeTasks.filter(task => task.status === 'Done');
 
   const handleSubmit = async (taskData) => {
     if (!user || !user._id) {

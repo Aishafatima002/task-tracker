@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
 // Base URL for your backend API
-const apiUrl = 'http://localhost:5000/api/tasks';
+const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/tasks`;
 
 // Helper function for handling errors
 const handleAsyncError = (error) => {

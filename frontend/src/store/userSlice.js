@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import * as authService from "../Services/authService";
-
+const apiUrl=`${import.meta.env.VITE_API_BASE_URL}`
 const user = JSON.parse(localStorage.getItem("user"));
 
 const initialState = {
@@ -9,7 +9,7 @@ const initialState = {
   error: null,
 };
 
-export const registerUser = createAsyncThunk("http://localhost:5000/auth/register", async (userData, thunkAPI) => {
+export const registerUser = createAsyncThunk(`${apiUrl}/auth/register`, async (userData, thunkAPI) => {
   try {
     return await authService.register(userData);
   } catch (error) {
@@ -17,7 +17,7 @@ export const registerUser = createAsyncThunk("http://localhost:5000/auth/registe
   }
 });
 
-export const loginUser = createAsyncThunk("http://localhost:5000/auth/login", async (userData, thunkAPI) => {
+export const loginUser = createAsyncThunk(`${apiUrl}/auth/login`, async (userData, thunkAPI) => {
   try {
     return await authService.login(userData);
   } catch (error) {
