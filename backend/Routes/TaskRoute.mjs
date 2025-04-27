@@ -1,21 +1,22 @@
-import { Router } from "express";
-import { createTask, getTask, updateTask, deleteTask, updateTaskStatus } from "../Controller/Task.mjs";     
-import tokenVerification from '../Middleware/tokenVerification.mjs';
+import express from 'express';
+import { createTask, getAllTasks, updateTask, deleteTask, moveTask } from '../Controller/Task.mjs';
 
-const router = Router();    
+const router = express.Router();
 
-router.post('/', tokenVerification, createTask);
-router.get('/:id', tokenVerification, getTask);
-router.get('/', tokenVerification, async (req, res, next) => {
-  // Assuming you want to get all tasks here
-  try {
-    const tasks = await import('../Controller/Task.mjs').then(mod => mod.getTasks(req, res, next));
-  } catch (error) {
-    next(error);
-  }
-});
-router.put('/:id', tokenVerification, updateTask);
-router.delete('/:id', tokenVerification, deleteTask);
-router.put('/:id/status', tokenVerification, updateTaskStatus);
+// Create Task
+router.post('/tasks', createTask);
 
-export default router
+// Get All Tasks
+router.get('/tasks', getAllTasks);
+
+// Update Task
+router.put('/tasks/:id', updateTask);
+
+// Delete Task
+router.delete('/tasks/:id', deleteTask);
+
+// Move Task (Update Status)
+router.put('/tasks/move/:id', moveTask);
+
+export default router;
+

@@ -2,7 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import connectToDB from './db/index.mjs';
-import userRoutes from './Routes/userRoute.mjs';
+import authRoutes from './Routes/userRoute.mjs';
 import taskRoutes from './Routes/TaskRoute.mjs';
 
 
@@ -46,8 +46,8 @@ app.use((err, req, res, next) => {
 });
 
 // Routes
-app.use('/api/auth', userRoutes);
-app.use('/api/tasks', taskRoutes);
+app.use("/api/auth", authRoutes);
+app.use('/api', taskRoutes);
 
 // Start the server
 app.listen(process.env.PORT, () => {

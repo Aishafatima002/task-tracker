@@ -1,97 +1,98 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchTasks, createTask } from '../store/taskSlice';
 import TaskCard from './TaskCard';
 import TaskForm from './TaskForm';
-import { fetchTasks, updateTaskStatus, createTask, updateTask } from '../store/taskSlice';
+import Sidebar from './Sidebar';
 
-const TaskBoard = () => {
+const TaskBoard = ({ showTaskForm, onCloseForm }) => {
   const dispatch = useDispatch();
-  const { tasks, loading, error } = useSelector((state) => state.tasks);
-
-  const [showForm, setShowForm] = useState(false);
-  const [editTask, setEditTask] = useState(null);
+  const { tasks, status, error, operationStatus } = useSelector((state) => state.tasks);
+  const user = useSelector((state) => state.user.user);
 
   useEffect(() => {
-    dispatch(fetchTasks());
-  }, [dispatch]);
-
-  const handleMove = (taskId, newStatus) => {
-    dispatch(updateTaskStatus({ id: taskId, status: newStatus }));
-  };
-
-  const handleCreateClick = () => {
-    setEditTask(null);
-    setShowForm(true);
-  };
-
-  const handleEditClick = (task) => {
-    setEditTask(task);
-    setShowForm(true);
-  };
-
-  const handleFormSubmit = (taskData) => {
-    if (editTask) {
-      dispatch(updateTask({ id: editTask._id, taskData }));
-    } else {
-      dispatch(createTask(taskData));
+    if (status === 'idle') {
+      dispatch(fetchTasks());
     }
-    setShowForm(false);
-  };
+  }, [status, dispatch]);
 
-  const handleFormCancel = () => {
-    setShowForm(false);
-  };
+  // Filter tasks by status
+  const todoTasks = tasks.filter(task => task.status === 'To Do');
+  const inProgressTasks = tasks.filter(task => task.status === 'In Progress');
+  const doneTasks = tasks.filter(task => task.status === 'Done');
 
-  const groupedTasks = {
-    'To Do': [],
-    'In Progress': [],
-    'Done': [],
-  };
-
-  tasks.forEach((task) => {
-    if (groupedTasks[task.status]) {
-      groupedTasks[task.status].push(task);
+  const handleSubmit = async (taskData) => {
+    if (!user || !user._id) {
+      console.error('User not authenticated');
+      return;
     }
-  });
+    const taskDataWithUser = { ...taskData, createdBy: user._id };
+    await dispatch(createTask(taskDataWithUser));
+    onCloseForm();
+  };
 
-  if (loading) return <p>Loading tasks...</p>;
-  if (error) return <p className="text-red-600">Error: {error}</p>;
+  if (status === 'loading') {
+    return <div className="p-4 text-center">Loading tasks...</div>;
+  }
+
+  if (status === 'failed') {
+    return <div className="p-4 bg-red-100 text-red-700">Error loading tasks: {error}</div>;
+  }
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-3xl font-bold">Task Board</h1>
-        <button
-          onClick={handleCreateClick}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          + New Task
-        </button>
-      </div>
+    <div className="flex min-h-screen bg-gradient-to-r from-[#ffe5d4] via-[#fdbba1] to-[#fb8c5d]">
+      <aside className="hidden md:flex">
+        <Sidebar />
+      </aside>
+      <main className="flex-1 p-4">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+          <h2 className="text-3xl font-extrabold text-[#4b5563] mb-4 md:mb-0">Task Board</h2>
+        </div>
 
-      {showForm && (
-        <TaskForm
-          initialData={editTask}
-          onSubmit={handleFormSubmit}
-          onCancel={handleFormCancel}
-        />
-      )}
+        {showTaskForm && (
+          <TaskForm
+            onSubmit={handleSubmit}
+            onCancel={onCloseForm}
+            loading={operationStatus === 'loading'}
+            error={error}
+          />
+        )}
 
-      <div className="flex space-x-4 mt-6">
-        {['To Do', 'In Progress', 'Done'].map((status) => (
-          <div key={status} className="flex-1 bg-gray-100 p-4 rounded min-h-[400px]">
-            <h2 className="text-xl font-bold mb-4">{status}</h2>
-            {groupedTasks[status].map((task) => (
-              <div key={task._id} onClick={() => handleEditClick(task)} className="cursor-pointer">
-                <TaskCard task={task} onMove={handleMove} />
-              </div>
-            ))}
+        {/* Three-column layout */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* To Do Column */}
+          <div className="bg-white bg-opacity-80 p-6 rounded-lg shadow-md border border-[#e5e7eb]">
+            <h3 className="font-semibold text-xl mb-5 text-[#9ca3af]">To Do ({todoTasks.length})</h3>
+            {todoTasks.length > 0 ? (
+              todoTasks.map(task => <TaskCard key={task._id} task={task} />)
+            ) : (
+              <p className="text-[#6b7280]">No tasks</p>
+            )}
           </div>
-        ))}
-      </div>
+
+          {/* In Progress Column */}
+          <div className="bg-white bg-opacity-80 p-6 rounded-lg shadow-md border border-[#e5e7eb]">
+            <h3 className="font-semibold text-xl mb-5 text-[#9ca3af]">In Progress ({inProgressTasks.length})</h3>
+            {inProgressTasks.length > 0 ? (
+              inProgressTasks.map(task => <TaskCard key={task._id} task={task} />)
+            ) : (
+              <p className="text-[#6b7280]">No tasks</p>
+            )}
+          </div>
+
+          {/* Done Column */}
+          <div className="bg-white bg-opacity-80 p-6 rounded-lg shadow-md border border-[#e5e7eb]">
+            <h3 className="font-semibold text-xl mb-5 text-[#9ca3af]">Done ({doneTasks.length})</h3>
+            {doneTasks.length > 0 ? (
+              doneTasks.map(task => <TaskCard key={task._id} task={task} />)
+            ) : (
+              <p className="text-[#6b7280]">No tasks</p>
+            )}
+          </div>
+        </div>
+      </main>
     </div>
   );
 };
 
 export default TaskBoard;
-

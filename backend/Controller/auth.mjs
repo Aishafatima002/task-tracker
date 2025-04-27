@@ -1,30 +1,39 @@
-import User from '../models/User.mjs';
-import asyncHandler from '../Middleware/aysnc.mjs';
-import ErrorResponse from '../utils/errorRespons.mjs';
+import jwt from "jsonwebtoken";
+import { User } from "../models/User.mjs";
 
-export const register = asyncHandler(async (req, res, next) => {
-  const { name, email, password } = req.body;
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "7d" });
+};
 
-  const user = await User.create({ name, email, password });
-  const token = user.getSignedJwtToken();
+export const registerUser = async (req, res) => {
+  const { username, email, password } = req.body;
+  try {
+    const userExists = await User.findOne({ email });
+    if (userExists) return res.status(400).json({ message: "User already exists" });
 
-  res.status(201).json({ success: true, token });
-});
+    const user = await User.create({ username, email, password });
+    const token = generateToken(user._id);
 
-export const login = asyncHandler(async (req, res, next) => {
+    res.status(201).json({ _id: user._id, username: user.username, email: user.email, token });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const loginUser = async (req, res) => {
   const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
-  if (!email || !password) {
-    return next(new ErrorResponse('Please provide email and password', 400));
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+
+    const token = generateToken(user._id);
+
+    res.status(200).json({ _id: user._id, username: user.username, email: user.email, token });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
-
-  const user = await User.findOne({ email }).select('+password');
-
-  if (!user || !(await user.matchPassword(password))) {
-    return next(new ErrorResponse('Invalid credentials', 401));
-  }
-
-  const token = user.getSignedJwtToken();
-  res.status(200).json({ success: true, token });
-});
-export default { register, login };
+};
+export default { registerUser, loginUser };

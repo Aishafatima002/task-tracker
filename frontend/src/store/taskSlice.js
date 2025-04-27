@@ -1,75 +1,195 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/tasks';
+// Base URL for your backend API
+const apiUrl = 'http://localhost:5000/api/tasks';
 
-// Async thunks
+// Helper function for handling errors
+const handleAsyncError = (error) => {
+  console.error('API Error:', error);
+  throw error.response?.data?.message || error.message || 'Something went wrong';
+};
+
+// Helper to get auth token from localStorage
+const getAuthToken = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user?.token || null;
+};
+
+// Async Thunks for interacting with the backend API
 export const fetchTasks = createAsyncThunk('tasks/fetchTasks', async () => {
-  const response = await axios.get(API_URL);
-  return response.data.data;
+  try {
+    const token = getAuthToken();
+    const config = {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    };
+    const response = await axios.get(apiUrl, config);
+    return response.data;
+  } catch (error) {
+    return handleAsyncError(error);
+  }
 });
 
 export const createTask = createAsyncThunk('tasks/createTask', async (taskData) => {
-  const response = await axios.post(API_URL, taskData);
-  return response.data.data;
+  try {
+    const token = getAuthToken();
+    const config = {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    };
+    const response = await axios.post(apiUrl, taskData, config);
+    return response.data;
+  } catch (error) {
+    return handleAsyncError(error);
+  }
 });
 
-export const updateTask = createAsyncThunk('tasks/updateTask', async ({ id, taskData }) => {
-  const response = await axios.put(`${API_URL}/${id}`, taskData);
-  return response.data.data;
+export const updateTask = createAsyncThunk('tasks/updateTask', async (taskData) => {
+  try {
+    const { id, ...updatedData } = taskData;
+    const token = getAuthToken();
+    const config = {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    };
+    const response = await axios.put(`${apiUrl}/${id}`, updatedData, config);
+    return response.data;
+  } catch (error) {
+    return handleAsyncError(error);
+  }
 });
 
 export const deleteTask = createAsyncThunk('tasks/deleteTask', async (id) => {
-  await axios.delete(`${API_URL}/${id}`);
-  return id;
+  try {
+    const token = getAuthToken();
+    const config = {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    };
+    await axios.delete(`${apiUrl}/${id}`, config);
+    return id;
+  } catch (error) {
+    return handleAsyncError(error);
+  }
 });
 
-export const updateTaskStatus = createAsyncThunk('tasks/updateTaskStatus', async ({ id, status }) => {
-  const response = await axios.put(`${API_URL}/${id}/status`, { status });
-  return response.data.data;
+export const moveTask = createAsyncThunk('tasks/moveTask', async ({ id, status }) => {
+  try {
+    const token = getAuthToken();
+    const config = {
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+      },
+    };
+    const response = await axios.put(`${apiUrl}/move/${id}`, { status }, config);
+    return response.data;
+  } catch (error) {
+    return handleAsyncError(error);
+  }
 });
+
+const initialState = {
+  tasks: [],
+  status: 'idle', // loading, succeeded, failed
+  error: null,
+  operationStatus: 'idle', // for tracking create/update/delete/move operations
+};
 
 const taskSlice = createSlice({
   name: 'tasks',
-  initialState: {
-    tasks: [],
-    loading: false,
-    error: null,
+  initialState,
+  reducers: {
+    resetOperationStatus: (state) => {
+      state.operationStatus = 'idle';
+      state.error = null;
+    },
   },
-  reducers: {},
   extraReducers: (builder) => {
     builder
+      // Fetch Tasks
       .addCase(fetchTasks.pending, (state) => {
-        state.loading = true;
+        state.status = 'loading';
         state.error = null;
       })
       .addCase(fetchTasks.fulfilled, (state, action) => {
-        state.loading = false;
+        state.status = 'succeeded';
         state.tasks = action.payload;
       })
       .addCase(fetchTasks.rejected, (state, action) => {
-        state.loading = false;
+        state.status = 'failed';
         state.error = action.error.message;
       })
+      
+      // Create Task
+      .addCase(createTask.pending, (state) => {
+        state.operationStatus = 'loading';
+        state.error = null;
+      })
       .addCase(createTask.fulfilled, (state, action) => {
+        state.operationStatus = 'succeeded';
         state.tasks.push(action.payload);
       })
+      .addCase(createTask.rejected, (state, action) => {
+        state.operationStatus = 'failed';
+        state.error = action.error.message;
+      })
+      
+      // Update Task
+      .addCase(updateTask.pending, (state) => {
+        state.operationStatus = 'loading';
+        state.error = null;
+      })
       .addCase(updateTask.fulfilled, (state, action) => {
+        state.operationStatus = 'succeeded';
         const index = state.tasks.findIndex(task => task._id === action.payload._id);
         if (index !== -1) {
           state.tasks[index] = action.payload;
         }
+      })
+      .addCase(updateTask.rejected, (state, action) => {
+        state.operationStatus = 'failed';
+        state.error = action.error.message;
+      })
+      
+      // Delete Task
+      .addCase(deleteTask.pending, (state) => {
+        state.operationStatus = 'loading';
+        state.error = null;
       })
       .addCase(deleteTask.fulfilled, (state, action) => {
+        state.operationStatus = 'succeeded';
         state.tasks = state.tasks.filter(task => task._id !== action.payload);
       })
-      .addCase(updateTaskStatus.fulfilled, (state, action) => {
+      .addCase(deleteTask.rejected, (state, action) => {
+        state.operationStatus = 'failed';
+        state.error = action.error.message;
+      })
+      
+      // Move Task
+      .addCase(moveTask.pending, (state) => {
+        state.operationStatus = 'loading';
+        state.error = null;
+      })
+      .addCase(moveTask.fulfilled, (state, action) => {
+        state.operationStatus = 'succeeded';
         const index = state.tasks.findIndex(task => task._id === action.payload._id);
         if (index !== -1) {
           state.tasks[index] = action.payload;
         }
+      })
+      .addCase(moveTask.rejected, (state, action) => {
+        state.operationStatus = 'failed';
+        state.error = action.error.message;
       });
   },
 });
 
+export const { resetOperationStatus } = taskSlice.actions;
+
 export default taskSlice.reducer;
+
