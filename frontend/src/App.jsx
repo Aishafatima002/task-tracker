@@ -1,8 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './components/Home';
-import LoginForm from './componnets/Login';
-import RegisterForm from './componnets/signup';
+import LoginForm from './components/componnets/Login';
+import RegisterForm from './components/componnets/signup';
 import TaskBoard from './components/TaskBoard';
 
 function App() {

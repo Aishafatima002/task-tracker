@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import connectToDB from './db/indes.mjs';
+import connectToDB from './db/index.mjs';
 import userRoutes from './Routes/userRoute.mjs';
 import taskRoutes from './Routes/TaskRoute.mjs';
 
@@ -45,11 +45,12 @@ app.use((err, req, res, next) => {
   res.status(500).send({ error: 'Something went wrong!' });
 });
 
+// Routes
+app.use('/api/auth', userRoutes);
+app.use('/api/tasks', taskRoutes);
+
 // Start the server
 app.listen(process.env.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);
 });
-// Routes
-app.use('/api/auth', userRoutes);
-app.use('/api/tasks', taskRoutes);
 
