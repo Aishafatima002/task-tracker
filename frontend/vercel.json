@@ -1,17 +1,6 @@
 {
   "rewrites": [
-  {
-  "source": "/api/auth/(.)",
-  "destination": "https://task-tracker-production-0fec.up.railway.app/api/auth/$1"
-  },
-  {
-  "source": "/api/tasks/(.)",
-  "destination": "https://task-tracker-production-0fec.up.railway.app/api/tasks/$1"
-  },
-  {
-  "source": "/api/(.*)",
-  "destination": "https://task-tracker-production-0fec.up.railway.app/api/$1"
-  },
+ 
   {
   "source": "/",
   "destination": "/index.html"
