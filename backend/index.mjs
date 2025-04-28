@@ -19,10 +19,10 @@ connectToDB();
 // Middleware setup
 ; // Secure HTTP headers
 app.use(cors({
-  origin: ['http://localhost:5174', 'http://localhost:5173','https://task-tracker-one-tau.vercel.app',],
-  methods: ['GET', 'PUT', 'POST', 'DELETE'],
+  origin: ['http://localhost:5174', 'http://localhost:5173', 'https://task-tracker-one-tau.vercel.app'],
+  methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
 }));
 app.use(express.json()); // Parse JSON bodies
 
