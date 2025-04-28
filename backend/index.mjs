@@ -49,6 +49,14 @@ app.use((err, req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use('/api', taskRoutes);
 
+// Global error handlers for better diagnostics
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception thrown:', error);
+});
+
 // Start the server
 app.listen(process.env.PORT, () => {
   console.log(`Server is running on port ${process.env.PORT}`);
